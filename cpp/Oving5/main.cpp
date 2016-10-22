@@ -9,12 +9,12 @@ class ChessBoard {
 public:
   enum class Color { WHITE,
                      BLACK };
-
+  
   class Piece {
   public:
     Piece(Color color) : color(color) {}
     virtual ~Piece() {}
-
+    
     Color color;
     std::string color_string() const {
       if (color == Color::WHITE)
@@ -28,24 +28,45 @@ public:
 
     /// Returns true if the given chess piece move is valid
     virtual bool valid_move(int from_x, int from_y, int to_x, int to_y) const = 0;
+    
+    virtual std::string skrivUt() const = 0;
   };
 
   class King : public Piece {
+    private:
+    string name;
+    public:
+    King(Color color) : Piece(color), name("King"){}
+    virtual ~King(){}
+    
     bool valid_move(int from_x, int from_y, int to_x, int to_y) const override{
-      int distance_moved_x = abs(to_x) - abs(from_x);
-      int distance_moved_y = abs(to_y) - abs(from_y);
+      int distance_moved_x = abs(to_x - from_x);
+      int distance_moved_y = abs(to_y - from_y);
       if(distance_moved_x > 1 || distance_moved_y > 1){
         return false;
       }
       return true;
     }
     
+    std::string type() const override{
+      return "Type: "+name+", color: "+ color_string();
+    }
+    
+    std::string skrivUt() const override{
+      return "Ki("+color_string().substr(0,1)+")";
+    }
+    
   };
 
   class Knight : public Piece {
+    string name;
+    public:
+    Knight(Color color) : Piece(color), name("Knight"){}
+    virtual ~Knight(){}
     bool valid_move(int from_x, int from_y, int to_x, int to_y) const override{
-      int distance_moved_x = abs(to_x) - abs(from_x);
-      int distance_moved_y = abs(to_y) - abs(from_y);
+      int distance_moved_x = abs(to_x - from_x);
+      int distance_moved_y = abs(to_y -from_y);
+      cout << distance_moved_x << " " << distance_moved_y;
       if(distance_moved_x == 2 && distance_moved_y == 1){
         return true;
       }else if(distance_moved_y == 2 && distance_moved_x == 1){
@@ -53,6 +74,12 @@ public:
       }
       return false;
     }
+    std::string type() const override{
+         return "Type: "+name+", color: "+ color_string();
+       }
+       std::string skrivUt() const override{
+         return "Kn("+color_string().substr(0,1)+")";
+       }
   };
 
   ChessBoard() {
@@ -60,6 +87,8 @@ public:
     squares.resize(8);
     for (auto &square_column : squares)
       square_column.resize(8);
+    
+    
   }
 
   /// 8x8 squares occupied by 1 or 0 chess pieces
@@ -89,6 +118,7 @@ public:
           }
         }
         piece_at_to_pos = move(piece);
+        skrivUt();
         return true;
       } else {
         cout << "can not move " << piece->type() << " from " << from << " to " << to << endl;
@@ -98,6 +128,22 @@ public:
       cout << "no piece at " << from << endl;
       return false;
     }
+  }
+  void skrivUt(){
+    char r = 'a';
+      for(const auto& i : squares){
+        cout << r << "\t";
+        for(const auto& j : i){
+          if(j == nullptr){
+            cout << "    0    \t";
+          }else{
+            cout<< j->skrivUt()<<"\t";
+          }
+        }
+        r++;
+        cout << endl;
+      }
+      cout << "\n\t    1    \t    2    \t    3    \t    4    \t    5    \t    6    \t    7    \t    8"<< endl;
   }
 };
 
@@ -120,6 +166,7 @@ int main() {
   cout << endl;
 
   cout << "A simulated game:" << endl;
+  board.skrivUt();
   board.move_piece("e1", "e2");
   board.move_piece("g8", "h6");
   board.move_piece("b1", "c3");
