@@ -2,7 +2,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include <functional>
 
 using namespace std;
 
@@ -10,12 +9,12 @@ class ChessBoard {
 public:
   enum class Color { WHITE,
                      BLACK };
-
+  
   class Piece {
   public:
     Piece(Color color) : color(color) {}
     virtual ~Piece() {}
-
+    
     Color color;
     std::string color_string() const {
       if (color == Color::WHITE)
@@ -29,14 +28,59 @@ public:
 
     /// Returns true if the given chess piece move is valid
     virtual bool valid_move(int from_x, int from_y, int to_x, int to_y) const = 0;
+    
+    virtual std::string skrivUt() const = 0;
   };
 
   class King : public Piece {
-    // missing implementations
+    private:
+    string name;
+    public:
+    King(Color color) : Piece(color), name("King"){}
+    virtual ~King(){}
+    
+    bool valid_move(int from_x, int from_y, int to_x, int to_y) const override{
+      int distance_moved_x = abs(to_x - from_x);
+      int distance_moved_y = abs(to_y - from_y);
+      if(distance_moved_x > 1 || distance_moved_y > 1){
+        return false;
+      }
+      return true;
+    }
+    
+    std::string type() const override{
+      return "Type: "+name+", color: "+ color_string();
+    }
+    
+    std::string skrivUt() const override{
+      return "Ki("+color_string().substr(0,1)+")";
+    }
+    
   };
 
   class Knight : public Piece {
-    // missing implementations
+    private:
+    string name;
+    public:
+    Knight(Color color) : Piece(color), name("Knight"){}
+    virtual ~Knight(){}
+    bool valid_move(int from_x, int from_y, int to_x, int to_y) const override{
+      int distance_moved_x = abs(to_x - from_x);
+      int distance_moved_y = abs(to_y -from_y);
+      cout << distance_moved_x << " " << distance_moved_y;
+      if(distance_moved_x == 2 && distance_moved_y == 1){
+        return true;
+      }else if(distance_moved_y == 2 && distance_moved_x == 1){
+        return true;
+      }
+      return false;
+    }
+    std::string type() const override{
+         return "Type: "+name+", color: "+ color_string();
+       }
+       std::string skrivUt() const override{
+         return "Kn("+color_string().substr(0,1)+")";
+       }
   };
 
   ChessBoard() {
@@ -54,6 +98,7 @@ public:
   function<void(Color color)> on_lost_game;
   function<void(const Piece &piece, const string &from, const string &to)> on_piece_move_invalid;
   function<void(const string &square)> on_piece_move_missing;
+  function<void()> after_piece_move;
 
   /// Move a chess piece if it is a valid move
   bool move_piece(const std::string &from, const std::string &to) {
@@ -84,6 +129,7 @@ public:
           }
         }
         piece_at_to_pos = move(piece);
+        after_piece_move();
         return true;
       } else {
         if (on_piece_move_invalid)
@@ -98,52 +144,106 @@ public:
   }
 };
 
-int main() {
-  ChessBoard board;
 
-  board.on_piece_move = [](const ChessBoard::Piece &piece, const string &from, const string &to) {
-    cout << piece.type() << " is moving from " << from << " to " << to << endl;
-  };
-  board.on_piece_removed = [](const ChessBoard::Piece &piece, const string &square) {
+class ChessBoardPrint{
+private:
+  ChessBoard *board;
+public:
+  ChessBoardPrint(ChessBoard *board) : board(board){}
+  
+  void piece_move(const ChessBoard::Piece &piece, const string &from, const string &to)const{
+     cout << piece.type() << " is moving from " << from << " to " << to << endl;
+  }
+  
+  void piece_remove(const ChessBoard::Piece &piece, const string &square) const{
     cout << piece.type() << " is being removed from " << square << endl;
-  };
-  board.on_lost_game = [](ChessBoard::Color color) {
+  }
+  
+  void lost_game(ChessBoard::Color color) const{
     if (color == ChessBoard::Color::WHITE)
       cout << "Black";
     else
       cout << "White";
     cout << " won the game" << endl;
-  };
-  board.on_piece_move_invalid = [](const ChessBoard::Piece &piece, const string &from, const string &to) {
+  }
+  
+  void move_invalid(const ChessBoard::Piece &piece, const string &from, const string &to){
     cout << "can not move " << piece.type() << " from " << from << " to " << to << endl;
-  };
-  board.on_piece_move_missing=[](const string &square) {
+  }
+  
+  void move_missing(const string &square){
     cout << "no piece at " << square << endl;
+  }
+  
+  void after_piece_move(){
+    char r = 'a';
+      for(const auto& i : board->squares){
+        cout << r << "\t";
+        for(const auto& j : i){
+          if(j == nullptr){
+            cout << "    0    \t";
+          }else{
+            cout<< j->skrivUt()<<"\t";
+          }
+        }
+        r++;
+        cout << endl;
+      }
+      cout << "\n\t    1    \t    2    \t    3    \t    4    \t    5    \t    6    \t    7    \t    8"<< endl;
+  }
+  
+};
+
+int main() {
+  ChessBoard board;
+  ChessBoardPrint print(&board);
+
+  board.on_piece_move = [&print](const ChessBoard::Piece &piece, const string &from, const string &to) {
+    print.piece_move(piece, from, to);
+  };
+  board.on_piece_removed = [&print](const ChessBoard::Piece &piece, const string &square) {
+    print.piece_remove(piece, square);
+  };
+  
+  board.on_lost_game = [&print](ChessBoard::Color color) {
+    print.lost_game(color);
+  };
+  
+  board.on_piece_move_invalid = [&print](const ChessBoard::Piece &piece, const string &from, const string &to) {
+    print.move_invalid(piece, from, to);
+  };
+  
+  board.on_piece_move_missing=[&print](const string &square) {
+    print.move_missing(square);
+  };
+  
+  board.after_piece_move=[&print](){
+    print.after_piece_move();
   };
 
   // board.squares.at(4).at(0) is the same as board.squares[4][0] but with range check
-  // board.squares.at(4).at(0) = make_unique<ChessBoard::King>(ChessBoard::Color::WHITE);
-  // board.squares.at(1).at(0) = make_unique<ChessBoard::Knight>(ChessBoard::Color::WHITE);
-  // board.squares.at(6).at(0) = make_unique<ChessBoard::Knight>(ChessBoard::Color::WHITE);
+  board.squares.at(4).at(0) = make_unique<ChessBoard::King>(ChessBoard::Color::WHITE);
+  board.squares.at(1).at(0) = make_unique<ChessBoard::Knight>(ChessBoard::Color::WHITE);
+  board.squares.at(6).at(0) = make_unique<ChessBoard::Knight>(ChessBoard::Color::WHITE);
 
-  // board.squares.at(4).at(7) = make_unique<ChessBoard::King>(ChessBoard::Color::BLACK);
-  // board.squares.at(1).at(7) = make_unique<ChessBoard::Knight>(ChessBoard::Color::BLACK);
-  // board.squares.at(6).at(7) = make_unique<ChessBoard::Knight>(ChessBoard::Color::BLACK);
+  board.squares.at(4).at(7) = make_unique<ChessBoard::King>(ChessBoard::Color::BLACK);
+  board.squares.at(1).at(7) = make_unique<ChessBoard::Knight>(ChessBoard::Color::BLACK);
+  board.squares.at(6).at(7) = make_unique<ChessBoard::Knight>(ChessBoard::Color::BLACK);
 
-  // cout << "Invalid moves:" << endl;
-  // board.move_piece("e3", "e2");
-  // board.move_piece("e1", "e3");
-  // board.move_piece("b1", "b2");
-  // cout << endl;
+  cout << "Invalid moves:" << endl;
+  board.move_piece("e3", "e2");
+  board.move_piece("e1", "e3");
+  board.move_piece("b1", "b2");
+  cout << endl;
 
-  // cout << "A simulated game:" << endl;
-  // board.move_piece("e1", "e2");
-  // board.move_piece("g8", "h6");
-  // board.move_piece("b1", "c3");
-  // board.move_piece("h6", "g8");
-  // board.move_piece("c3", "d5");
-  // board.move_piece("g8", "h6");
-  // board.move_piece("d5", "f6");
-  // board.move_piece("h6", "g8");
-  // board.move_piece("f6", "e8");
+  cout << "A simulated game:" << endl;
+  board.move_piece("e1", "e2");
+  board.move_piece("g8", "h6");
+  board.move_piece("b1", "c3");
+  board.move_piece("h6", "g8");
+  board.move_piece("c3", "d5");
+  board.move_piece("g8", "h6");
+  board.move_piece("d5", "f6");
+  board.move_piece("h6", "g8");
+  board.move_piece("f6", "e8");
 }

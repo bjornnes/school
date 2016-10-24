@@ -20,8 +20,7 @@ private:
   void handle_request(shared_ptr<Connection> connection) {
     auto read_buffer = make_shared<boost::asio::streambuf>();
     // Read from client until newline ("\r\n")
-    async_read_until(connection->socket, *read_buffer, "\r\n",
-                     [this, connection, read_buffer](const boost::system::error_code &ec, size_t) {
+    async_read_until(connection->socket, *read_buffer, "\r\n\r\n", [this, connection, read_buffer](const boost::system::error_code &ec, size_t) {
       // If not error:
       if (!ec) {
         // Retrieve message from client as string:
@@ -39,16 +38,26 @@ private:
         auto write_buffer = make_shared<boost::asio::streambuf>();
         ostream write_stream(write_buffer.get());
 
+        if (message == "GET /en_side HTTP/1.1") {
+          //write_stream << "Dette er en side" << "\r\n";
+          message = "HTTP/1.1 200 OK\r\nContent-Length: 16\r\n\r\nDette er en side";
+        } else if (message == "GET / HTTP/1.1") {
+          //write_stream << "Dette er hovedsiden" << "\r\n";
+          message = "HTTP/1.1 200 OK\r\nContent-Length: 19\r\n\r\nDette er hovedsiden";
+        } else {
+          message = "HTTP/1.1 404.1 ERROR\r\nContent-Length: 15\r\n\r\nFant ikke siden";
+        }
+
         // Add message to be written to client:
         write_stream << message << "\r\n";
 
         // Write to client
-        async_write(connection->socket, *write_buffer,
-                    [this, connection, write_buffer](const boost::system::error_code &ec, size_t) {
+        async_write(connection->socket, *write_buffer, [this, connection, write_buffer](const boost::system::error_code &ec, size_t) {
           // If not error:
           if (!ec)
             handle_request(connection);
         });
+        return;
       }
     });
   }
@@ -57,8 +66,8 @@ private:
     // The (client) connection is added to the lambda parameter and handle_request
     // in order to keep the object alive for as long as it is needed.
     auto connection = make_shared<Connection>(io_service);
-    
-    // Accepts a new (client) connection. On connection, immediately start accepting a new connection 
+
+    // Accepts a new (client) connection. On connection, immediately start accepting a new connection
     acceptor.async_accept(connection->socket, [this, connection](const boost::system::error_code &ec) {
       accept();
       // If not error:
@@ -69,7 +78,7 @@ private:
   }
 
 public:
-  EchoServer() : endpoint(tcp::v4(), 8080), acceptor(io_service, endpoint) {}
+  EchoServer() : endpoint(tcp::v4(), 8081), acceptor(io_service, endpoint) {}
 
   void start() {
     accept();
