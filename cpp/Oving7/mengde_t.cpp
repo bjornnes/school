@@ -13,6 +13,7 @@ int main(){
   Mengde b = Mengde(bTab);
   
   //Tester legg til
+  cout << "A: ";
   a += 2;
   a += 4;
   a += 3;
@@ -20,12 +21,16 @@ int main(){
   
   skrivUt(a);
   
+  cout << "B: ";
+  skrivUt(b);
+  
   //Tester unionen
+  cout << "A & B: ";
   skrivUt(a&b);
   
   //Tester å sette a lik b
   a=b;
-  
+  cout << "A=B, og skriver ut A: ";
   skrivUt(a);
   
   return 0;

@@ -1,0 +1,10 @@
+#!/bin/bash
+domene=$1
+echo "MX-info for "$domene
+nslookup -type=mx $domene | grep $domene
+echo ""
+echo "SPF-info for "$domene
+spf=nslookup -type=txt $domene | grep "spf1"
+echo $spf
+echo ""
+echo "Revers-oppslag "
