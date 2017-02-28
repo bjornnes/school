@@ -47,7 +47,7 @@ if [[ $? -eq 0 ]]
            elif [ "$1" = 'octave' ]; then
                octave < ./eval/octave/read_and_evaluate_octave.m 1>&2 
            else
-               python eval/python/evaluate.py
+               python2 eval/python/evaluate.py
            fi
        fi
     fi
