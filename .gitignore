@@ -36,3 +36,9 @@ build/
 text8
 text8.zip
 enwiki-latest-pages-articles1.xml-p000000010p000030302.bz2
+Bachelor2017/text8
+Bachelor2017/GloVe-1.2/cooccurrence.shuf.bin
+Bachelor2017/GloVe-1.2/cooccurrence.bin
+Bachelor2017/SalestockFastText/FastTextTest/model.bin
+Bachelor2017/SalestockFastText/FastTextTest/classifier_text8.bin.bin
+Bachelor2017/SalestockFastText/FastTextTest/model.vec

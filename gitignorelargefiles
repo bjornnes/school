@@ -1,0 +1,2 @@
+#! /bin/sh
+find Bachelor2017/ -type f -size +10M >> .gitignore
